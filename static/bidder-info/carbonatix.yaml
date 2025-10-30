@@ -1,0 +1,20 @@
+endpoint: "http://your-carbonatix-endpoint.com/openrtb2" # Replace with your actual endpoint
+geoscope:
+  - USA
+maintainer:
+  email: prebid-maintainer@carbonatix.com
+gvlVendorID: 1376 # https://iabeurope.eu/vendor-list-tcf/
+modifyingVastXmlAllowed: true
+openrtb:
+  version: 2.6
+capabilities:
+  app:
+    mediaTypes:
+      - banner
+      - video
+      - audio
+  site:
+    mediaTypes:
+      - banner
+      - video
+      - audio

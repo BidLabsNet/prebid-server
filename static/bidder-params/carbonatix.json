@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Carbonatix Adapter Params",
+  "description": "A schema which validates params accepted by the Carbonatix adapter",
+  "type": "object",
+
+  "properties": {
+    "endpoint": {
+      "type": "string",
+      "description": "Custom endpoint URL for this impression (optional). If not provided, uses the default endpoint from bidder-info.",
+      "minLength": 1
+    }
+  },
+
+  "additionalProperties": false
+}

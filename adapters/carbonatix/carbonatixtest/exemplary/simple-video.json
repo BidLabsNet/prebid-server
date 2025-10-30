@@ -1,0 +1,89 @@
+{
+  "mockBidRequest": {
+    "id": "test-video-request",
+    "imp": [
+      {
+        "id": "test-video-imp",
+        "video": {
+          "mimes": ["video/mp4"],
+          "minduration": 5,
+          "maxduration": 30,
+          "protocols": [2, 3, 5, 6],
+          "w": 640,
+          "h": 480
+        },
+        "ext": {
+          "bidder": {}
+        }
+      }
+    ]
+  },
+  "httpCalls": [
+    {
+      "expectedRequest": {
+        "uri": "http://REGION.example.com/openrtb2",
+        "body": {
+          "id": "test-video-request",
+          "imp": [
+            {
+              "id": "test-video-imp",
+              "video": {
+                "mimes": ["video/mp4"],
+                "minduration": 5,
+                "maxduration": 30,
+                "protocols": [2, 3, 5, 6],
+                "w": 640,
+                "h": 480
+              },
+              "ext": {
+                "bidder": {}
+              }
+            }
+          ]
+        },
+        "impIDs": ["test-video-imp"]
+      },
+      "mockResponse": {
+        "status": 200,
+        "body": {
+          "id": "test-video-request",
+          "seatbid": [
+            {
+              "bid": [
+                {
+                  "id": "test-video-bid",
+                  "impid": "test-video-imp",
+                  "price": 2.5,
+                  "adm": "<VAST version=\"3.0\"></VAST>",
+                  "crid": "video-creative-123",
+                  "w": 640,
+                  "h": 480
+                }
+              ],
+              "seat": "carbonatix"
+            }
+          ],
+          "cur": "USD"
+        }
+      }
+    }
+  ],
+  "expectedBidResponses": [
+    {
+      "bids": [
+        {
+          "bid": {
+            "id": "test-video-bid",
+            "impid": "test-video-imp",
+            "price": 2.5,
+            "adm": "<VAST version=\"3.0\"></VAST>",
+            "crid": "video-creative-123",
+            "w": 640,
+            "h": 480
+          },
+          "type": "video"
+        }
+      ]
+    }
+  ]
+}

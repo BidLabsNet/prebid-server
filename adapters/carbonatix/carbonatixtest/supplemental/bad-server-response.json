@@ -1,0 +1,59 @@
+{
+  "mockBidRequest": {
+    "id": "test-bad-response",
+    "imp": [
+      {
+        "id": "test-imp-error",
+        "banner": {
+          "format": [
+            {
+              "w": 300,
+              "h": 250
+            }
+          ]
+        },
+        "ext": {
+          "bidder": {}
+        }
+      }
+    ]
+  },
+  "httpCalls": [
+    {
+      "expectedRequest": {
+        "uri": "http://REGION.example.com/openrtb2",
+        "body": {
+          "id": "test-bad-response",
+          "imp": [
+            {
+              "id": "test-imp-error",
+              "banner": {
+                "format": [
+                  {
+                    "w": 300,
+                    "h": 250
+                  }
+                ]
+              },
+              "ext": {
+                "bidder": {}
+              }
+            }
+          ]
+        },
+        "impIDs": ["test-imp-error"]
+      },
+      "mockResponse": {
+        "status": 500,
+        "body": {}
+      }
+    }
+  ],
+  "expectedMakeRequestsErrors": [],
+  "expectedMakeBidsErrors": [
+    {
+      "value": "Unexpected status code: 500. Run with request.debug = 1 for more info",
+      "comparison": "literal"
+    }
+  ]
+}

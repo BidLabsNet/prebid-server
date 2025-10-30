@@ -1,0 +1,53 @@
+{
+  "mockBidRequest": {
+    "id": "test-no-content",
+    "imp": [
+      {
+        "id": "test-imp-no-bid",
+        "banner": {
+          "format": [
+            {
+              "w": 300,
+              "h": 250
+            }
+          ]
+        },
+        "ext": {
+          "bidder": {}
+        }
+      }
+    ]
+  },
+  "httpCalls": [
+    {
+      "expectedRequest": {
+        "uri": "http://REGION.example.com/openrtb2",
+        "body": {
+          "id": "test-no-content",
+          "imp": [
+            {
+              "id": "test-imp-no-bid",
+              "banner": {
+                "format": [
+                  {
+                    "w": 300,
+                    "h": 250
+                  }
+                ]
+              },
+              "ext": {
+                "bidder": {}
+              }
+            }
+          ]
+        },
+        "impIDs": ["test-imp-no-bid"]
+      },
+      "mockResponse": {
+        "status": 204,
+        "body": {}
+      }
+    }
+  ],
+  "expectedBidResponses": []
+}

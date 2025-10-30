@@ -1,0 +1,93 @@
+{
+  "mockBidRequest": {
+    "id": "test-custom-endpoint",
+    "imp": [
+      {
+        "id": "test-imp-custom",
+        "banner": {
+          "format": [
+            {
+              "w": 728,
+              "h": 90
+            }
+          ]
+        },
+        "ext": {
+          "bidder": {
+            "endpoint": "https://custom.carbonatix.com/bid"
+          }
+        }
+      }
+    ]
+  },
+  "httpCalls": [
+    {
+      "expectedRequest": {
+        "uri": "https://custom.carbonatix.com/bid",
+        "body": {
+          "id": "test-custom-endpoint",
+          "imp": [
+            {
+              "id": "test-imp-custom",
+              "banner": {
+                "format": [
+                  {
+                    "w": 728,
+                    "h": 90
+                  }
+                ]
+              },
+              "ext": {
+                "bidder": {
+                  "endpoint": "https://custom.carbonatix.com/bid"
+                }
+              }
+            }
+          ]
+        },
+        "impIDs": ["test-imp-custom"]
+      },
+      "mockResponse": {
+        "status": 200,
+        "body": {
+          "id": "test-custom-endpoint",
+          "seatbid": [
+            {
+              "bid": [
+                {
+                  "id": "custom-bid-id",
+                  "impid": "test-imp-custom",
+                  "price": 1.5,
+                  "adm": "<div>custom endpoint ad</div>",
+                  "crid": "custom-creative",
+                  "w": 728,
+                  "h": 90
+                }
+              ],
+              "seat": "carbonatix"
+            }
+          ],
+          "cur": "USD"
+        }
+      }
+    }
+  ],
+  "expectedBidResponses": [
+    {
+      "bids": [
+        {
+          "bid": {
+            "id": "custom-bid-id",
+            "impid": "test-imp-custom",
+            "price": 1.5,
+            "adm": "<div>custom endpoint ad</div>",
+            "crid": "custom-creative",
+            "w": 728,
+            "h": 90
+          },
+          "type": "banner"
+        }
+      ]
+    }
+  ]
+}
