@@ -479,6 +479,7 @@ type Analytics struct {
 	File     FileLogs      `mapstructure:"file"`
 	Agma     AgmaAnalytics `mapstructure:"agma"`
 	Pubstack Pubstack      `mapstructure:"pubstack"`
+	Kafka    KafkaLogs     `mapstructure:"kafka"`
 }
 
 type CurrencyConverter struct {
@@ -526,6 +527,52 @@ type AgmaAnalyticsAccount struct {
 // FileLogs Corresponding config for FileLogger as a PBS Analytics Module
 type FileLogs struct {
 	Filename string `mapstructure:"filename"`
+}
+
+// KafkaLogs configuration for Kafka Analytics Module
+type KafkaLogs struct {
+	Enabled  bool          `mapstructure:"enabled"`
+	Brokers  []string      `mapstructure:"brokers"`
+	Topic    string        `mapstructure:"topic"`
+	Producer KafkaProducer `mapstructure:"producer"`
+	Privacy  KafkaPrivacy  `mapstructure:"privacy"`
+	Filters  KafkaFilters  `mapstructure:"filters"`
+	Retry    KafkaRetry    `mapstructure:"retry"`
+	Buffer   KafkaBuffer   `mapstructure:"buffer"`
+}
+
+// KafkaProducer configuration for Kafka producer settings
+type KafkaProducer struct {
+	BatchSize    int    `mapstructure:"batch_size"`
+	BatchTimeout string `mapstructure:"batch_timeout"`
+	Async        bool   `mapstructure:"async"`
+	RequiredAcks int    `mapstructure:"required_acks"`
+}
+
+// KafkaPrivacy configuration for privacy controls
+type KafkaPrivacy struct {
+	AnonymizeIP bool `mapstructure:"anonymize_ip"`
+	MaskUserID  bool `mapstructure:"mask_user_id"`
+}
+
+// KafkaFilters configuration for event filtering
+type KafkaFilters struct {
+	EventTypes []string `mapstructure:"event_types"`
+	Accounts   []string `mapstructure:"accounts"`
+	SampleRate float64  `mapstructure:"sample_rate"`
+}
+
+// KafkaRetry configuration for retry and error handling
+type KafkaRetry struct {
+	MaxRetries   int    `mapstructure:"max_retries"`
+	RetryBackoff string `mapstructure:"retry_backoff"`
+}
+
+// KafkaBuffer configuration for buffering
+type KafkaBuffer struct {
+	Size    string `mapstructure:"size"`
+	Count   int    `mapstructure:"count"`
+	Timeout string `mapstructure:"timeout"`
 }
 
 type Pubstack struct {

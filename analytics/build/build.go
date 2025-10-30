@@ -9,6 +9,7 @@ import (
 	"github.com/prebid/prebid-server/v3/analytics/agma"
 	"github.com/prebid/prebid-server/v3/analytics/clients"
 	"github.com/prebid/prebid-server/v3/analytics/filesystem"
+	"github.com/prebid/prebid-server/v3/analytics/kafka"
 	"github.com/prebid/prebid-server/v3/analytics/pubstack"
 	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
@@ -53,6 +54,15 @@ func New(analytics *config.Analytics) analytics.Runner {
 			modules["agma"] = agmaModule
 		} else {
 			glog.Errorf("Could not initialize Agma Anayltics: %v", err)
+		}
+	}
+
+	if analytics.Kafka.Enabled {
+		kafkaModule, err := kafka.NewKafkaWriter(&analytics.Kafka)
+		if err == nil {
+			modules["kafka"] = kafkaModule
+		} else {
+			glog.Errorf("Could not initialize Kafka Analytics: %v", err)
 		}
 	}
 
