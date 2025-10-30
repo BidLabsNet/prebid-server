@@ -535,24 +535,23 @@ type KafkaLogs struct {
 	Brokers  []string      `mapstructure:"brokers"`
 	Topic    string        `mapstructure:"topic"`
 	Producer KafkaProducer `mapstructure:"producer"`
-	Privacy  KafkaPrivacy  `mapstructure:"privacy"`
 	Filters  KafkaFilters  `mapstructure:"filters"`
-	Retry    KafkaRetry    `mapstructure:"retry"`
-	Buffer   KafkaBuffer   `mapstructure:"buffer"`
 }
 
-// KafkaProducer configuration for Kafka producer settings
+// KafkaProducer configuration for Kafka producer settings (librdkafka)
 type KafkaProducer struct {
-	BatchSize    int    `mapstructure:"batch_size"`
-	BatchTimeout string `mapstructure:"batch_timeout"`
-	Async        bool   `mapstructure:"async"`
-	RequiredAcks int    `mapstructure:"required_acks"`
-}
-
-// KafkaPrivacy configuration for privacy controls
-type KafkaPrivacy struct {
-	AnonymizeIP bool `mapstructure:"anonymize_ip"`
-	MaskUserID  bool `mapstructure:"mask_user_id"`
+	// LingerMs - Wait up to this many milliseconds to batch messages
+	LingerMs int `mapstructure:"linger_ms"`
+	// BatchSize - Maximum batch size in bytes
+	BatchSize int `mapstructure:"batch_size"`
+	// CompressionType - Compression codec (none, gzip, snappy, lz4, zstd)
+	CompressionType string `mapstructure:"compression_type"`
+	// Acks - Number of acknowledgments (0=none, 1=leader, -1/all=all replicas)
+	Acks int `mapstructure:"acks"`
+	// MaxInFlight - Maximum number of in-flight requests per connection
+	MaxInFlight int `mapstructure:"max_in_flight"`
+	// QueueBufferingMaxMessages - Maximum number of messages buffered locally
+	QueueBufferingMaxMessages int `mapstructure:"queue_buffering_max_messages"`
 }
 
 // KafkaFilters configuration for event filtering
@@ -560,19 +559,6 @@ type KafkaFilters struct {
 	EventTypes []string `mapstructure:"event_types"`
 	Accounts   []string `mapstructure:"accounts"`
 	SampleRate float64  `mapstructure:"sample_rate"`
-}
-
-// KafkaRetry configuration for retry and error handling
-type KafkaRetry struct {
-	MaxRetries   int    `mapstructure:"max_retries"`
-	RetryBackoff string `mapstructure:"retry_backoff"`
-}
-
-// KafkaBuffer configuration for buffering
-type KafkaBuffer struct {
-	Size    string `mapstructure:"size"`
-	Count   int    `mapstructure:"count"`
-	Timeout string `mapstructure:"timeout"`
 }
 
 type Pubstack struct {

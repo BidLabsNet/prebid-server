@@ -29,69 +29,64 @@ package kafka
 // ============================================================================
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/json"
 	"log"
 	"math/big"
-	"time"
 
+	kafkalib "github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/prebid/prebid-server/v3/analytics"
 	"github.com/prebid/prebid-server/v3/config"
-	"github.com/segmentio/kafka-go"
 )
 
 // KafkaWriter implements the Prebid Server analytics interface
 // and streams OpenRTB events to Kafka for processing with Flink and ClickHouse
 type KafkaWriter struct {
-	writer *kafka.Writer
-	config *config.KafkaLogs
+	producer *kafkalib.Producer
+	config   *config.KafkaLogs
 }
 
 // NewKafkaWriter creates a new Kafka analytics adapter with configuration
 func NewKafkaWriter(cfg *config.KafkaLogs) (*KafkaWriter, error) {
-	// Apply defaults
-	batchSize := 100
+	// Build producer config from YAML settings
+	producerConfig := &kafkalib.ConfigMap{
+		"bootstrap.servers":   cfg.Brokers,
+		"go.delivery.reports": false, // Disable delivery reports for fire-and-forget mode
+	}
+
+	// Apply producer settings from config (with defaults)
+	if cfg.Producer.LingerMs > 0 {
+		producerConfig.SetKey("linger.ms", cfg.Producer.LingerMs)
+	}
 	if cfg.Producer.BatchSize > 0 {
-		batchSize = cfg.Producer.BatchSize
+		producerConfig.SetKey("batch.size", cfg.Producer.BatchSize)
+	}
+	if cfg.Producer.CompressionType != "" {
+		producerConfig.SetKey("compression.type", cfg.Producer.CompressionType)
+	}
+	if cfg.Producer.Acks >= -1 {
+		producerConfig.SetKey("acks", cfg.Producer.Acks)
+	}
+	if cfg.Producer.MaxInFlight > 0 {
+		producerConfig.SetKey("max.in.flight", cfg.Producer.MaxInFlight)
+	}
+	if cfg.Producer.QueueBufferingMaxMessages > 0 {
+		producerConfig.SetKey("queue.buffering.max.messages", cfg.Producer.QueueBufferingMaxMessages)
 	}
 
-	batchTimeout := 10 * time.Millisecond
-	if cfg.Producer.BatchTimeout != "" {
-		if duration, err := time.ParseDuration(cfg.Producer.BatchTimeout); err == nil {
-			batchTimeout = duration
-		}
+	// Initialize the producer
+	producer, err := kafkalib.NewProducer(producerConfig)
+	if err != nil {
+		log.Printf("[KafkaWriter] Failed to create Kafka producer: %v", err)
+		return nil, err
 	}
 
-	requiredAcks := kafka.RequireOne
-	if cfg.Producer.RequiredAcks != 0 {
-		requiredAcks = kafka.RequiredAcks(cfg.Producer.RequiredAcks)
-	}
-
-	writer := &kafka.Writer{
-		Addr:            kafka.TCP(cfg.Brokers...),
-		Topic:           cfg.Topic,
-		Balancer:        &kafka.LeastBytes{},
-		BatchSize:       batchSize,
-		BatchTimeout:    batchTimeout,
-		Async:           cfg.Producer.Async,
-		RequiredAcks:    requiredAcks,
-		MaxAttempts:     cfg.Retry.MaxRetries,
-		WriteBackoffMin: 100 * time.Millisecond,
-		WriteBackoffMax: 1 * time.Second,
-	}
-
-	// Apply retry backoff if configured
-	if cfg.Retry.RetryBackoff != "" {
-		if duration, err := time.ParseDuration(cfg.Retry.RetryBackoff); err == nil {
-			writer.WriteBackoffMin = duration
-			writer.WriteBackoffMax = duration * 10
-		}
-	}
+	log.Printf("[KafkaWriter] Successfully initialized (brokers: %v, topic: %s, compression: %s)",
+		cfg.Brokers, cfg.Topic, cfg.Producer.CompressionType)
 
 	return &KafkaWriter{
-		writer: writer,
-		config: cfg,
+		producer: producer,
+		config:   cfg,
 	}, nil
 }
 
@@ -167,12 +162,11 @@ func (a *KafkaWriter) LogNotificationEventObject(neo *analytics.NotificationEven
 	a.sendToKafka(event, "notification")
 }
 
-// Shutdown closes the Kafka writer
+// Shutdown closes the Kafka producer
 func (a *KafkaWriter) Shutdown() {
-	if a.writer != nil {
-		if err := a.writer.Close(); err != nil {
-			log.Printf("[KafkaWriter] Error closing Kafka writer: %v", err)
-		}
+	if a.producer != nil {
+		a.producer.Flush(5000) // Wait up to 5 seconds for messages to be delivered
+		a.producer.Close()
 	}
 }
 
@@ -234,32 +228,32 @@ func (a *KafkaWriter) shouldSample() bool {
 // All OpenRTB transformation logic has been moved to transform.go
 // This keeps kafka_module.go focused on Kafka operations and configuration
 
-// sendToKafka sends the event to Kafka
+// sendToKafka sends the event to Kafka asynchronously
+// Produce() is non-blocking and returns immediately after queuing the message
+// The message will be sent by a background thread
 func (a *KafkaWriter) sendToKafka(event *OpenRTBEvent, eventType string) {
 	if event == nil {
 		return
 	}
 
-	data, err := json.Marshal(event)
+	jsonData, err := json.Marshal(event)
 	if err != nil {
 		log.Printf("[KafkaWriter] Failed to marshal %s event: %v", eventType, err)
 		return
 	}
 
-	msg := kafka.Message{
-		Key:   []byte(event.RequestID), // Use request ID as partition key
-		Value: data,
-		Headers: []kafka.Header{
-			{Key: "event_type", Value: []byte(eventType)},
-			{Key: "account_id", Value: []byte(event.AccountID)},
+	msg := &kafkalib.Message{
+		TopicPartition: kafkalib.TopicPartition{
+			Topic:     &a.config.Topic,
+			Partition: kafkalib.PartitionAny,
 		},
-		Time: time.Now(),
+		Value: jsonData,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := a.writer.WriteMessages(ctx, msg); err != nil {
-		log.Printf("[KafkaWriter] Failed to write %s message to Kafka: %v", eventType, err)
+	// Produce() is async - queues message and returns immediately without blocking
+	// nil delivery channel = fire-and-forget mode (no delivery confirmation)
+	if err := a.producer.Produce(msg, nil); err != nil {
+		// Only fails if queue is full or producer is closed
+		log.Printf("[KafkaWriter] Failed to queue %s message (queue full?): %v", eventType, err)
 	}
 }
