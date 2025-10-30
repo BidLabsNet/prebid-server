@@ -33,6 +33,7 @@ import (
 	"encoding/json"
 	"log"
 	"math/big"
+	"strings"
 
 	kafkalib "github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/prebid/prebid-server/v3/analytics"
@@ -50,7 +51,7 @@ type KafkaWriter struct {
 func NewKafkaWriter(cfg *config.KafkaLogs) (*KafkaWriter, error) {
 	// Build producer config from YAML settings
 	producerConfig := &kafkalib.ConfigMap{
-		"bootstrap.servers":   cfg.Brokers,
+		"bootstrap.servers":   strings.Join(cfg.Brokers, ","),
 		"go.delivery.reports": false, // Disable delivery reports for fire-and-forget mode
 	}
 
